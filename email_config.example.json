@@ -1,0 +1,8 @@
+{
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 587,
+  "sender_email": "email_anda@gmail.com",
+  "sender_password": "xxxx xxxx xxxx xxxx",
+  "sender_name": "Ayu - Tim Proyek KJK",
+  "recipient_email": "email_tujuan@gmail.com"
+}
