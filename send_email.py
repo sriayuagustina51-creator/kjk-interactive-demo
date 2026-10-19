@@ -1,6 +1,7 @@
 """
 Script Pengirim Email Undangan Demo KJK
 Menggunakan smtplib bawaan Python (aman, tanpa dependensi eksternal).
+Mendukung port 465 (SSL) dan port 587 (TLS) dengan fallback otomatis.
 """
 
 import os
@@ -11,7 +12,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# URL Resmi Aplikasi Demo Vercel
 DEMO_URL = "https://kjk-interactive-demo.vercel.app/"
 CONFIG_FILE = "email_config.json"
 
@@ -20,10 +20,10 @@ def load_config():
     """Membaca konfigurasi dari file email_config.json atau environment variables."""
     config = {
         "smtp_server": os.getenv("SMTP_SERVER", "smtp.gmail.com"),
-        "smtp_port": int(os.getenv("SMTP_PORT", 587)),
-        "sender_email": os.getenv("SENDER_EMAIL", ""),
+        "smtp_port": int(os.getenv("SMTP_PORT", 465)),
+        "sender_email": os.getenv("SENDER_EMAIL", "ayuikazaki@gmail.com"),
         "sender_password": os.getenv("SENDER_PASSWORD", ""),
-        "sender_name": os.getenv("SENDER_NAME", "Tim Riset KJK Demo"),
+        "sender_name": os.getenv("SENDER_NAME", "Sri Ayu Agustina - Proyek KJK"),
         "recipient_email": os.getenv("RECIPIENT_EMAIL", ""),
     }
 
@@ -35,6 +35,10 @@ def load_config():
         except Exception as e:
             print(f"[Peringatan] Gagal membaca {CONFIG_FILE}: {e}")
 
+    # Bersihkan spasi dari App Password jika ada
+    if config.get("sender_password"):
+        config["sender_password"] = config["sender_password"].replace(" ", "").strip()
+
     return config
 
 
@@ -45,17 +49,16 @@ def create_email_message(sender_name, sender_email, recipient_email):
     msg["From"] = f"{sender_name} <{sender_email}>"
     msg["To"] = recipient_email
 
-    # Versi Teks Biasa (Plain Text)
     plain_text = f"""Halo,
 
-Saya sedang melakukan pengujian demonstrasi antarmuka pengguna interaktif (UI/UX) untuk proyek Keamanan Jaringan dan Komputer (KJK).
+Saya sedang melakukan demonstrasi prototipe antarmuka pengguna interaktif (UI/UX) untuk proyek Keamanan Jaringan dan Komputer (KJK).
 
-Kami mengundang Anda untuk menguji alur interaksi prototipe kami melalui tautan berikut:
+Kami mengundang Anda untuk mencoba alur demonstrasi interaktif melalui tautan resmi kami:
 {DEMO_URL}
 
 Langkah Pengujian:
-1. Akses tautan demo di atas melalui browser (PC atau ponsel).
-2. Masukkan nama pengguna serta kata sandi simulasi pada form login.
+1. Buka tautan demo di atas melalui browser laptop atau ponsel.
+2. Masukkan nama/email simulasi serta kata sandi simulasi (minimal 6 karakter).
 3. Klik tombol "Masuk ke Demo Interaktif".
 4. Periksa ringkasan hasil interaksi Anda dan ID sesi acak pada halaman konfirmasi.
 
@@ -69,7 +72,6 @@ Salam hormat,
 {sender_name}
 """
 
-    # Versi HTML Elegan & Profesional
     html_text = f"""<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -105,7 +107,7 @@ Salam hormat,
                 Halo Rekan-rekan,
               </p>
               <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
-                Dalam rangka demonstrasi proyek tugas <strong>Keamanan Jaringan & Komputer (KJK)</strong>, saya telah membangun aplikasi prototipe interaktif modern dengan Next.js dan Tailwind CSS.
+                Dalam rangka demonstrasi proyek <strong>Keamanan Jaringan &amp; Komputer (KJK)</strong>, saya telah membangun aplikasi prototipe interaktif modern dengan Next.js dan Tailwind CSS.
               </p>
 
               <!-- Langkah Pengujian Box -->
@@ -115,7 +117,7 @@ Salam hormat,
                 </h3>
                 <ol style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.7; color: #94a3b8;">
                   <li>Akses halaman demo melalui tombol di bawah ini.</li>
-                  <li>Isi formulir login simulasi (nama pengguna & kata sandi sembarang).</li>
+                  <li>Isi formulir login simulasi (nama pengguna &amp; kata sandi sembarang).</li>
                   <li>Klik <strong>"Masuk ke Demo Interaktif"</strong>.</li>
                   <li>Periksa halaman konfirmasi hasil interaksi Anda.</li>
                 </ol>
@@ -166,10 +168,8 @@ Salam hormat,
 
     part1 = MIMEText(plain_text, "plain", "utf-8")
     part2 = MIMEText(html_text, "html", "utf-8")
-
     msg.attach(part1)
     msg.attach(part2)
-
     return msg
 
 
@@ -179,41 +179,33 @@ def send_email():
     sender_email = config.get("sender_email", "").strip()
     sender_password = config.get("sender_password", "").strip()
     recipient_email = config.get("recipient_email", "").strip()
-    sender_name = config.get("sender_name", "Tim Proyek KJK").strip()
+    sender_name = config.get("sender_name", "Sri Ayu Agustina - Proyek KJK").strip()
     smtp_server = config.get("smtp_server", "smtp.gmail.com").strip()
-    smtp_port = int(config.get("smtp_port", 587))
 
-    # Validasi kelengkapan konfigurasi
     if not sender_email or not sender_password or not recipient_email:
-        print("=" * 60)
-        print("PENGATURAN PENGIRIMAN EMAIL DIPERLUKAN")
-        print("=" * 60)
-        print("Silakan lengkapi file 'email_config.json' di folder proyek ini.")
-        print()
-        print("Contoh struktur 'email_config.json':")
-        print("""{
-  "sender_email": "email_anda@gmail.com",
-  "sender_password": "xxxx xxxx xxxx xxxx",
-  "recipient_email": "email_teman@gmail.com",
-  "sender_name": "Ayu - Proyek KJK"
-}""")
-        print()
-        print("CARA MENDAPATKAN 'sender_password' GMAIL (App Password 16 Karakter):")
-        print("1. Buka https://myaccount.google.com/security")
-        print("2. Pastikan '2-Step Verification' (Verifikasi 2 Langkah) sudah AKTIF.")
-        print("3. Cari 'App passwords' (Sandi aplikasi) atau buka: https://myaccount.google.com/apppasswords")
-        print("4. Buat sandi baru (beri nama misal: 'KJK Demo').")
-        print("5. Salin 16 huruf sandi yang muncul ke kolom 'sender_password'.")
-        print("=" * 60)
+        print("[ERROR] Konfigurasi belum lengkap di email_config.json")
         return False
 
-    print(f"[*] Menghubungkan ke server SMTP {smtp_server}:{smtp_port}...")
     context = ssl.create_default_context()
+    msg = create_email_message(sender_name, sender_email, recipient_email)
 
+    # Metode 1: Coba koneksi port 465 (SSL langsung - sangat stabil di semua ISP)
+    print(f"[*] Mencoba koneksi SSL via {smtp_server}:465...")
     try:
-        msg = create_email_message(sender_name, sender_email, recipient_email)
+        with smtplib.SMTP_SSL(smtp_server, 465, context=context, timeout=12) as server:
+            print(f"[*] Melakukan autentikasi sebagai {sender_email}...")
+            server.login(sender_email, sender_password)
+            print(f"[*] Mengirim email ke {recipient_email}...")
+            server.sendmail(sender_email, [recipient_email], msg.as_string())
+        print(f"[SUCCESS] Email BERHASIL TERKIRIM ke: {recipient_email}")
+        return True
+    except Exception as e_ssl:
+        print(f"[INFO] Percobaan port 465: {e_ssl}")
 
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+    # Metode 2: Coba port 587 (STARTTLS)
+    print(f"[*] Mencoba koneksi STARTTLS via {smtp_server}:587...")
+    try:
+        with smtplib.SMTP(smtp_server, 587, timeout=12) as server:
             server.ehlo()
             server.starttls(context=context)
             server.ehlo()
@@ -221,18 +213,10 @@ def send_email():
             server.login(sender_email, sender_password)
             print(f"[*] Mengirim email ke {recipient_email}...")
             server.sendmail(sender_email, [recipient_email], msg.as_string())
-
-        print(f"[SUCCESS] Email berhasil terkirim ke {recipient_email}!")
-        print(f"[INFO] Tautan aplikasi demo: {DEMO_URL}")
+        print(f"[SUCCESS] Email BERHASIL TERKIRIM ke: {recipient_email}")
         return True
-
-    except smtplib.SMTPAuthenticationError:
-        print("[ERROR] Autentikasi SMTP Gagal!")
-        print("Catatan: Jika menggunakan Gmail, Anda harus menggunakan 'App Password' (Sandi Aplikasi), bukan kata sandi akun Gmail biasa.")
-        print("Buka: https://myaccount.google.com/apppasswords")
-        return False
-    except Exception as e:
-        print(f"[ERROR] Terjadi kesalahan saat mengirim email: {e}")
+    except Exception as e_tls:
+        print(f"[ERROR] Percobaan port 587 juga gagal: {e_tls}")
         return False
 
 
